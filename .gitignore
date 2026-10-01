@@ -1,0 +1,36 @@
+# Local game inspection and downloaded tools
+/.inspection/
+/.tools/
+
+# Build outputs, release assets, and deployment backups
+/artifacts/
+/bin/
+/obj/
+*.dll
+*.exe
+*.pdb
+*.zip
+*.7z
+*.nupkg
+
+# IDE and machine-local settings
+/.vs/
+/.vscode/
+*.user
+*.suo
+*.code-workspace
+*.DotSettings.user
+
+# Runtime data, logs, and credentials
+/logs/
+*.log
+*.cfg
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+Thumbs.db
+.DS_Store
