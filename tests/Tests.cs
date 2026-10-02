@@ -34,6 +34,14 @@ internal static class Tests
         Check(RoomSnapshot.ClampPage(2, 16, 8) == 1, "removed last row");
         var empty = Counts.From(new SkillRow[0]);
         Check(empty.Total == 0 && empty.Mastered == 0 && empty.Selectable == 0, "empty totals");
+        Check(ScriptText.Decode(new byte[] { 0x8d, 0x44, 0x8a, 0xb4, 0x93, 0x78 }) == "好感度", "native CP932 decoding");
+        Check(ScriptText.Decode(new byte[] { 0x41, 0xb1, 0 }) == "Aｱ", "CP932 kana and trailing NUL");
+        Check(ScriptText.Decode(new byte[0]) == "", "empty script");
+        Check(ScriptText.Decode(new byte[] { 0xef, 0xbb, 0xbf, 0xe5, 0xa5, 0xbd, 0 }) == "好", "UTF8 BOM");
+        bool invalidRejected = false;
+        try { ScriptText.Decode(new byte[] { 0x81 }); } catch (System.ComponentModel.Win32Exception) { invalidRejected = true; }
+        Check(invalidRejected, "reject invalid CP932");
+        DialogueTests.Run(Check);
         Console.WriteLine("PASS: " + count + " checks.");
     }
 }

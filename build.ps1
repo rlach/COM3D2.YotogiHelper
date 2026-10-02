@@ -24,7 +24,7 @@ if ($Test) {
     $testExe = Join-Path $testOut 'YotogiHelper.Tests.exe'
     $testArgs = @('/noconfig','/nostdlib+','/langversion:7.3','/target:exe',('/out:' + $testExe))
     $testArgs += @('mscorlib.dll','System.dll','System.Core.dll','System.Xml.dll') | ForEach-Object { '/reference:' + (Join-Path $managed $_) }
-    $testArgs += @('src/Domain.cs','tests/Tests.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
+    $testArgs += @('src/Domain.cs','src/AffectionHints.cs','src/DialogueReward.cs','src/ScriptText.cs','tests/Tests.cs','tests/DialogueTests.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
     & dotnet $compiler @testArgs
     if ($LASTEXITCODE -ne 0) { throw 'Test compilation failed.' }
     '<configuration><startup useLegacyV2RuntimeActivationPolicy="true"><supportedRuntime version="v4.0" /></startup></configuration>' | Set-Content -LiteralPath ($testExe + '.config') -Encoding UTF8

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
@@ -7,20 +8,21 @@ using COM3D2API;
 using HarmonyLib;
 using UnityEngine;
 
-[assembly: AssemblyVersion("0.2.1.0")]
-[assembly: AssemblyFileVersion("0.2.1.0")]
+[assembly: AssemblyVersion("0.4.0.0")]
+[assembly: AssemblyFileVersion("0.4.0.0")]
 namespace COM3D2.YotogiHelper
 {
     [BepInPlugin(Guid, "Yotogi Helper", Version)]
     [BepInDependency("deathweasel.com3d2.api", BepInDependency.DependencyFlags.HardDependency)]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Guid = "COM3D2.YotogiHelper", Version = "0.2.1";
+        public const string Guid = "COM3D2.YotogiHelper", Version = "0.4.0";
         internal static Plugin Instance;
         private Harmony harmony;
         private YotogiStageSelectManager screen;
         private YotogiManager manager;
         private NativeView view;
+        private DialogueHintsView dialogueHints;
         private Coroutine attaching;
         private bool dirty;
         private ConfigEntry<Vector2> flatPosition, vrPosition;
@@ -88,6 +90,11 @@ namespace COM3D2.YotogiHelper
         }
         private void Update()
         {
+            if (dialogueHints != null)
+            {
+                try { if (!dialogueHints.Tick()) ClearHints(); }
+                catch (Exception ex) { Logger.LogError(ex); ClearHints(); }
+            }
             if (view == null) return;
             if (!screen || !manager || !screen.root_obj || !screen.root_obj.activeInHierarchy)
             { Detach(); return; }
@@ -113,7 +120,38 @@ namespace COM3D2.YotogiHelper
         private void OnDestroy()
         {
             if (harmony != null) harmony.UnpatchSelf();
-            Detach(); Instance = null;
+            ClearHints(); Detach(); Instance = null;
+        }
+        private void ClearHints()
+        {
+            if (dialogueHints != null) { dialogueHints.Dispose(); dialogueHints = null; }
+        }
+        [HarmonyPatch(typeof(SelectButtonCtrl), "CreateSelectButtons")]
+        private static class DialogueChoices
+        {
+            private static void Postfix(SelectButtonCtrl __instance, List<KeyValuePair<string, KeyValuePair<string, bool>>> __0)
+            {
+                if (!Instance) return;
+                Instance.ClearHints();
+                try { Instance.dialogueHints = DialogueHintsView.Create(__instance, __0, message => Instance.Logger.LogInfo(message)); }
+                catch (Exception ex) { Instance.Logger.LogWarning("Dialogue hints unavailable: " + ex); }
+            }
+        }
+        [HarmonyPatch(typeof(SelectButtonCtrl), "ClickSelectButton")]
+        private static class DialogueChosen
+        {
+            private static void Prefix(SelectButtonCtrl __instance)
+            {
+                if (Instance && Instance.dialogueHints != null && Instance.dialogueHints.Owner == __instance) Instance.ClearHints();
+            }
+        }
+        [HarmonyPatch(typeof(SelectButtonCtrl), "ClearExistSelectButton")]
+        private static class DialogueCleared
+        {
+            private static void Prefix(SelectButtonCtrl __instance)
+            {
+                if (Instance && Instance.dialogueHints != null && Instance.dialogueHints.Owner == __instance) Instance.ClearHints();
+            }
         }
         [HarmonyPatch(typeof(YotogiStageSelectManager), "OnCall")]
         private static class Entered
